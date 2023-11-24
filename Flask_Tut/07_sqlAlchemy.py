@@ -26,12 +26,26 @@ def home():
     return render_template('03_1_base.html')
 
 
+@app.route('/view')
+def view():
+    return render_template('08_view.html', values=users.query.all())
+
+
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
         session.permanent = True
         user = request.form['nm']
         session['user'] = user
+
+        found_user = users.query.filter_by(name=user).first()
+        if found_user:
+            session['email'] = found_user.email
+        else:
+            usr = users(user, '')
+            db.session.add(usr)
+            db.session.commit()
+
         flash('Login was succesful!', category='info')
         return redirect(url_for('user'))
     else:
@@ -40,6 +54,7 @@ def login():
             return redirect(url_for('user'))
         else:
             return render_template('04_login.html')
+
 
  
 @app.route('/logout')
@@ -60,6 +75,9 @@ def user():
         if request.method == 'POST':
             email = request.form['email']
             session['email'] = email
+            found_user = users.query.filter_by(name=user).first()
+            found_user.email = email
+            db.session.commit()
             flash('Email was saved!!')
         else:
             if 'email' in session:
